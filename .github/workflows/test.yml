@@ -9,12 +9,9 @@ on:
         required: true
         type: choice
         options:
-          - apply
-          - remove
-      confirmation:
-        description: "Type APPROVED to confirm the action"
-        required: true
-        type: string
+          - ONE
+          - TWO
+          - THREE
 
 jobs:
   terraform:
@@ -26,37 +23,14 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Terraform Apply
-        if: github.event.inputs.action == 'apply'
-        run: |
-          if [ "${{ github.event.inputs.confirmation }}" != "APPROVED" ]; then
-            echo "Approval failed"
-            exit 1
-          fi
+      - name: Stage ONE
+        if: github.event.inputs.action == 'ONE'
+        run: echo Hello, world! stage one
 
-          terraform apply \
-            --var-file=variables/prod.tfvars \
-            -auto-approve
+      - name: Stage TWO
+        if: github.event.inputs.action == 'TWO'
+        run: echo Hello, world! stage two
 
-      - name: Terraform Destroy
-        if: github.event.inputs.action == 'destroy'
-        run: |
-          if [ "${{ github.event.inputs.confirmation }}" != "APPROVED" ]; then
-            echo "Approval failed"
-            exit 1
-          fi
-
-          if [ "${{ github.event.inputs.destroy_type }}" = "all" ]; then
-
-            terraform destroy \
-              --var-file=variables/prod.tfvars \
-              -auto-approve
-
-          elif [ "${{ github.event.inputs.destroy_type }}" = "target" ]; then
-
-            terraform destroy \
-              --var-file=variables/prod.tfvars \
-              -target="${{ github.event.inputs.target_resource }}" \
-              -auto-approve
-
-          fi
+      - name: Stage THREE
+        if: github.event.inputs.action == 'THREE'
+        run: echo Hello, world! stage three
