@@ -1,36 +1,62 @@
-# This is a basic workflow to help you get started with Actions
+name: Test Pipeline
+run-name: Testing github actions
 
-name: CI
-
-# Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the "master" branch
-  push:
-    branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
+    inputs:
+      action:
+        description: "Choose the action to perform"
+        required: true
+        type: choice
+        options:
+          - apply
+          - remove
+      confirmation:
+        description: "Type APPROVED to confirm the action"
+        required: true
+        type: string
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
-  build:
-    # The type of runner that the job will run on
+  terraform:
     runs-on: ubuntu-latest
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
+    defaults:
+      run:
+        working-directory: ${{ env.TF_WORKING_DIR }}
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      # Runs a single command using the runners shell
-      - name: Run a one-line script
-        run: echo Hello, world!
-
-      # Runs a set of commands using the runners shell
-      - name: Run a multi-line script
+      - name: Terraform Apply
+        if: github.event.inputs.action == 'apply'
         run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
+          if [ "${{ github.event.inputs.confirmation }}" != "APPROVED" ]; then
+            echo "Approval failed"
+            exit 1
+          fi
+
+          terraform apply \
+            --var-file=variables/prod.tfvars \
+            -auto-approve
+
+      - name: Terraform Destroy
+        if: github.event.inputs.action == 'destroy'
+        run: |
+          if [ "${{ github.event.inputs.confirmation }}" != "APPROVED" ]; then
+            echo "Approval failed"
+            exit 1
+          fi
+
+          if [ "${{ github.event.inputs.destroy_type }}" = "all" ]; then
+
+            terraform destroy \
+              --var-file=variables/prod.tfvars \
+              -auto-approve
+
+          elif [ "${{ github.event.inputs.destroy_type }}" = "target" ]; then
+
+            terraform destroy \
+              --var-file=variables/prod.tfvars \
+              -target="${{ github.event.inputs.target_resource }}" \
+              -auto-approve
+
+          fi
