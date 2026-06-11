@@ -3,31 +3,24 @@ run-name: Testing github actions
 
 on:
   workflow_dispatch:
-    inputs:
-      action:
-        description: "Choose the action to perform"
-        required: true
-        type: choice
-        options:
-          - ONE
-          - TWO
-          - THREE
 
 jobs:
-  test_job:
+  runs-on: ubuntu-latest
+  stage-one:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+      - run: echo "Stage One Completed"
 
-      - name: Stage ONE
-        if: ${{ github.event.inputs.action == 'ONE' }}
-        run: echo Hello, world! stage one
+  approval:
+    name: Manual Approval
+    runs-on: ubuntu-latest
+    needs: stage-one
+    environment: prod-approval
+    steps:
+      - run: echo "Waiting for approval"
 
-      - name: Stage TWO
-        if: ${{ github.event.inputs.action == 'TWO' }}
-        run: echo Hello, world! stage two
-
-      - name: Stage THREE
-        if: ${{ github.event.inputs.action == 'THREE' }}
-        run: echo Hello, world! stage three
+  stage-two:
+    runs-on: ubuntu-latest
+    needs: approval
+    steps:
+      - run: echo "Approved - Moving to next stage"
