@@ -24,13 +24,13 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Stage ONE
-        if: github.event.inputs.action == 'ONE'
+        if: ${{ github.event.inputs.action == 'ONE' }}
         run: echo Hello, world! stage one
 
       - name: Stage TWO
-        if: github.event.inputs.action == 'TWO'
+        if: ${{ github.event.inputs.action == 'TWO' }}
         run: echo Hello, world! stage two
 
       - name: Stage THREE
-        if: github.event.inputs.action == 'THREE'
+        if: ${{ github.event.inputs.action == 'THREE' }}
         run: echo Hello, world! stage three
