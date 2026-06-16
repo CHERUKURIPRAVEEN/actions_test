@@ -1,6 +1,21 @@
 name: Test Pipeline
 run-name: Testing github actions
 
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: terraform-prod
+  cancel-in-progress: false
+
+pre-requisites:
+- name: Configure AWS Credentials
+  uses: aws-actions/configure-aws-credentials@v4
+  with:
+    role-to-assume: arn:aws:iam::277802554635:role/GITHUB_ODIC_AUTH
+    aws-region: us-east-1
+
 on:
   workflow_dispatch:
 
@@ -9,17 +24,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: echo "Stage One Completed"
-
-  approval:
-    name: Manual Approval
-    runs-on: ubuntu-latest
-    needs: stage-one
-    environment: prod-approval
-    steps:
-      - run: echo "Waiting for approval"
-
-  stage-two:
-    runs-on: ubuntu-latest
-    needs: approval
-    steps:
-      - run: echo "Approved - Moving to next stage"
+  
+      
+    
