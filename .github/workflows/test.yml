@@ -28,44 +28,43 @@ env:
  TF_PLUGIN_CACHE_DIR: ~/.terraform.d/plugin-cache
 
 jobs:
+  validate:
+    runs-on: ubuntu-latest
 
-validate:
-  runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-  steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+        
+      - name: Create Plugin Cache Directory
+        run: mkdir -p ~/.terraform.d/plugin-cache
 
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v3
-      with:
-        terraform_version: ${{ env.TF_VERSION }}
-      
-    - name: Create Plugin Cache Directory
-      run: mkdir -p ~/.terraform.d/plugin-cache
+      - name: Cache Terraform Providers
+        uses: actions/cache@v4
+        with:
+          path: ~/.terraform.d/plugin-cache
+          key: terraform-${{ runner.os }}-${{ hashFiles('**/.terraform.lock.hcl') }}
+          restore-keys: |
+            terraform-${{ runner.os }}-
 
-    - name: Cache Terraform Providers
-      uses: actions/cache@v4
-      with:
-        path: ~/.terraform.d/plugin-cache
-        key: terraform-${{ runner.os }}-${{ hashFiles('**/.terraform.lock.hcl') }}
-        restore-keys: |
-          terraform-${{ runner.os }}-
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
 
-    - name: Setup TFLint
-      uses: terraform-linters/setup-tflint@v4
+      - name: Initialize TFLint
+        run: tflint --init
 
-    - name: Initialize TFLint
-      run: tflint --init
+      - name: Run TFLint
+        run: tflint --recursive
 
-    - name: Run TFLint
-      run: tflint --recursive
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
 
-    - name: Terraform Format Check
-      run: terraform fmt -check -recursive
+      - name: Terraform Initialize
+        run: terraform init
 
-    - name: Terraform Initialize
-      run: terraform init
-
-    - name: Terraform Validate
-      run: terraform validate
+      - name: Terraform Validate
+        run: terraform validate
