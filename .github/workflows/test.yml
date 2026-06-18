@@ -78,3 +78,46 @@ jobs:
 
       - name: Terraform Validate
         run: terraform validate
+
+  plan:
+    if: github.event.inputs.deployment_action == 'plan' || github.event.inputs.deployment_action == 'apply'
+    needs: validate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Create Plugin Cache Directory
+        run: mkdir -p ~/.terraform.d/plugin-cache
+
+      - name: Cache Terraform Providers
+        uses: actions/cache@v4
+        with:
+          path: ~/.terraform.d/plugin-cache
+          key: terraform-${{ runner.os }}-${{ hashFiles('**/.terraform.lock.hcl') }}
+          restore-keys: |
+            terraform-${{ runner.os }}-
+      
+      - name: Terraform Initialize
+        run: terraform init
+
+      - name: Terraform Plan
+        run: |
+          terraform plan \
+            -var-file=variables/prod.tfvars \
+            -out=tfplan
+      
+      - name: Show Terraform Plan
+        run: terraform show -no-color tfplan
+
+      - name: Upload Plan Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan
+          path: tfplan
