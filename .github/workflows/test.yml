@@ -1,25 +1,71 @@
-name: Test Pipeline
-run-name: Testing github actions
+name: Terraform Pipeline
+run-name: Deploy Infrastructure
 
 on:
   workflow_dispatch:
+    inputs:
+      deployment_action:
+        description: "Terraform Action"
+        required: true
+        type: choice
+        options:
+          - plan
+          - apply
+          - destroy
+
+      target_resource:
+        description: "Terraform resource address to destroy. Use 'all' to destroy everything."
+        required: false
+        type: string
+        default: "all" 
+    
+env:
+ TF_LOG: INFO
+ AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+ AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+ TF_WORKING_DIR: .
+ TF_VERSION: 1.12.2
+ TF_PLUGIN_CACHE_DIR: ~/.terraform.d/plugin-cache
 
 jobs:
-  stage-one:
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "Stage One Completed"
 
-  approval:
-    name: Manual Approval
-    runs-on: ubuntu-latest
-    needs: stage-one
-    environment: prod-approval
-    steps:
-      - run: echo "Waiting for approval"
+validate:
+  runs-on: ubuntu-latest
 
-  stage-two:
-    runs-on: ubuntu-latest
-    needs: approval
-    steps:
-      - run: echo "Approved - Moving to next stage"
+  steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: ${{ env.TF_VERSION }}
+      
+    - name: Create Plugin Cache Directory
+      run: mkdir -p ~/.terraform.d/plugin-cache
+
+    - name: Cache Terraform Providers
+      uses: actions/cache@v4
+      with:
+        path: ~/.terraform.d/plugin-cache
+        key: terraform-${{ runner.os }}-${{ hashFiles('**/.terraform.lock.hcl') }}
+        restore-keys: |
+          terraform-${{ runner.os }}-
+
+    - name: Setup TFLint
+      uses: terraform-linters/setup-tflint@v4
+
+    - name: Initialize TFLint
+      run: tflint --init
+
+    - name: Run TFLint
+      run: tflint --recursive
+
+    - name: Terraform Format Check
+      run: terraform fmt -check -recursive
+
+    - name: Terraform Initialize
+      run: terraform init
+
+    - name: Terraform Validate
+      run: terraform validate
