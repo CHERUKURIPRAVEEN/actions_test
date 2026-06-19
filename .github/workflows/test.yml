@@ -61,6 +61,15 @@ jobs:
           restore-keys: |
             terraform-${{ runner.os }}-
 
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+
+      - name: Terraform Initialize
+        run: terraform init
+
+      - name: Terraform Validate
+        run: terraform validate
+
       - name: Setup TFLint
         uses: terraform-linters/setup-tflint@v4
 
@@ -70,14 +79,11 @@ jobs:
       - name: Run TFLint
         run: tflint --recursive
 
-      - name: Terraform Format Check
-        run: terraform fmt -check -recursive
+      - name: Install Checkov
+        run: pip install checkov
 
-      - name: Terraform Initialize
-        run: terraform init
-
-      - name: Terraform Validate
-        run: terraform validate
+      - name: Run Checkov
+        run: checkov -d .        
 
   plan:
     if: github.event.inputs.deployment_action == 'plan' || github.event.inputs.deployment_action == 'apply'
@@ -109,9 +115,7 @@ jobs:
 
       - name: Terraform Plan
         run: |
-          terraform plan \
-            -var-file=variables/dev.tfvars \
-            -out=tfplan
+          terraform plan -var-file=variables/dev.tfvars -out=tfplan
       
       - name: Show Terraform Plan
         run: terraform show -no-color tfplan
