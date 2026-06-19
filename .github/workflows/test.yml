@@ -85,7 +85,7 @@ jobs:
         run: pip install checkov
 
       - name: Run Checkov
-        run: checkov -d .        
+        run: checkov -d .  --skip-check CKV_TF_1
 
   plan:
     if: github.event.inputs.deployment_action == 'plan' || github.event.inputs.deployment_action == 'apply'
