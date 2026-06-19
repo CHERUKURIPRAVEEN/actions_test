@@ -132,10 +132,12 @@ jobs:
     if: github.event.inputs.deployment_action == 'apply'
     needs: plan
     runs-on: ubuntu-latest
-  
+    environment: prod-approval
+
     steps:
       - name: Waiting for Approval
         run: echo "Approved. Proceeding to deployment."
+  
 
   apply:
     if: github.event.inputs.deployment_action == 'apply'
@@ -172,3 +174,44 @@ jobs:
 
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
+
+  destroy:
+    needs: validate
+    runs-on: ubuntu-latest
+    if: github.event.inputs.deployment_action == 'destroy'
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Create Plugin Cache Directory
+        run: mkdir -p ~/.terraform.d/plugin-cache
+
+      - name: Cache Terraform Providers
+        uses: actions/cache@v4
+        with:
+          path: ~/.terraform.d/plugin-cache
+          key: terraform-${{ runner.os }}-${{ hashFiles('**/.terraform.lock.hcl') }}
+          restore-keys: |
+            terraform-${{ runner.os }}-
+      
+      - name: Terraform Initialize
+        run: terraform init
+
+      - name: Terraform Destroy
+        run: |
+          if [ "${{ github.event.inputs.target_resource }}" = "all" ]; then
+            terraform destroy \
+              -var-file=variables/prod.tfvars \
+              -auto-approve
+          else
+            terraform destroy \
+              -var-file=variables/prod.tfvars \
+              -target="${{ github.event.inputs.target_resource }}" \
+              -auto-approve
+          fi
