@@ -132,7 +132,7 @@ jobs:
     if: github.event.inputs.deployment_action == 'apply'
     needs: plan
     runs-on: ubuntu-latest
-    environment: dev-approval
+    environment: dev
 
     steps:
       - name: Waiting for Approval
