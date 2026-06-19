@@ -1,5 +1,7 @@
 name: Terraform Pipeline
 run-name: Deploy Infrastructure
+permissions:
+  contents: read
 
 on:
   workflow_dispatch:
@@ -125,3 +127,48 @@ jobs:
         with:
           name: tfplan
           path: tfplan
+  
+  approval:
+    if: github.event.inputs.deployment_action == 'apply'
+    needs: plan
+    runs-on: ubuntu-latest
+  
+    steps:
+      - name: Waiting for Approval
+        run: echo "Approved. Proceeding to deployment."
+
+  apply:
+    if: github.event.inputs.deployment_action == 'apply'
+    needs: approval
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Create Plugin Cache Directory
+        run: mkdir -p ~/.terraform.d/plugin-cache
+
+      - name: Cache Terraform Providers
+        uses: actions/cache@v4
+        with:
+          path: ~/.terraform.d/plugin-cache
+          key: terraform-${{ runner.os }}-${{ hashFiles('**/.terraform.lock.hcl') }}
+          restore-keys: |
+            terraform-${{ runner.os }}-
+      
+      - name: Terraform Initialize
+        run: terraform init
+
+      - name: Download Plan Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan
