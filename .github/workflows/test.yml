@@ -132,7 +132,7 @@ jobs:
     if: github.event.inputs.deployment_action == 'apply'
     needs: plan
     runs-on: ubuntu-latest
-    environment: prod-approval
+    environment: dev-approval
 
     steps:
       - name: Waiting for Approval
@@ -207,11 +207,11 @@ jobs:
         run: |
           if [ "${{ github.event.inputs.target_resource }}" = "all" ]; then
             terraform destroy \
-              -var-file=variables/prod.tfvars \
+              -var-file=variables/dev.tfvars \
               -auto-approve
           else
             terraform destroy \
-              -var-file=variables/prod.tfvars \
+              -var-file=variables/dev.tfvars \
               -target="${{ github.event.inputs.target_resource }}" \
               -auto-approve
           fi
