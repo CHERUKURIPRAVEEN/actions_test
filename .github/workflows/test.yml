@@ -51,7 +51,7 @@ jobs:
 
           unzip awscliv2.zip
 
-          sudo ./aws/install
+          sudo ./aws/install --update
 
           aws --version
 
