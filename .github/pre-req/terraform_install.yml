@@ -18,25 +18,3 @@ runs:
         unzip -o terraform_${TF_VERSION}_linux_amd64.zip
         sudo mv terraform /usr/local/bin/
         terraform version
-
-    - name: Setup TFLint
-      run: |
-        TFLINT_VERSION=0.55.1
-        echo "Installing TFLint ${TFLINT_VERSION}"
-        wget -q https://github.com/terraform-linters/tflint/releases/download/v${TFLINT_VERSION}/tflint_linux_amd64.zip
-        unzip -o tflint_linux_amd64.zip
-        sudo mv tflint /usr/local/bin/
-        tflint --version
-
-    - name: Install Checkov Dependencies
-      run: |
-        sudo apt update
-        sudo apt install -y \
-        python3 \
-        python3-pip \
-        python3-venv \
-        python3-full
-        python3 -m venv .checkov-env
-        .checkov-env/bin/python -m pip install --upgrade pip
-        .checkov-env/bin/pip install checkov
-        .checkov-env/bin/checkov --version

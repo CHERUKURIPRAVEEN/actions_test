@@ -42,37 +42,14 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Configure AWS CLI
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y unzip curl
-          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-          unzip awscliv2.zip
-          sudo ./aws/install --update
-          aws --version
-          mkdir -p ~/.aws
-          cat > ~/.aws/credentials <<EOF
-          [default]
-          aws_access_key_id=${AWS_ACCESS_KEY_ID}
-          aws_secret_access_key=${AWS_SECRET_ACCESS_KEY}
-          EOF
-          cat > ~/.aws/config <<EOF
-          [default]
-          region=us-east-1
-          output=json
-          EOF
+      - name: aws cli setup
+        uses: ./.github/pre-req/aws_cli.yml
 
       - name: Verify AWS Identity
         run: aws sts get-caller-identity
 
       - name: Install Terraform
-        run: |
-          TF_VERSION=${{ env.TF_VERSION }}
-          echo "Installing Terraform ${TF_VERSION}"
-          wget -q https://releases.hashicorp.com/terraform/${TF_VERSION}/terraform_${TF_VERSION}_linux_amd64.zip
-          unzip -o terraform_${TF_VERSION}_linux_amd64.zip
-          sudo mv terraform /usr/local/bin/
-          terraform version
+        uses: ./.github/pre-req/terraform_install.yml
 
       - name: Terraform Format Check
         run: terraform fmt -check -recursive
@@ -84,14 +61,8 @@ jobs:
         run: terraform validate
 
       - name: Setup TFLint
-        run: |
-          TFLINT_VERSION=0.55.1
-          echo "Installing TFLint ${TFLINT_VERSION}"
-          wget -q https://github.com/terraform-linters/tflint/releases/download/v${TFLINT_VERSION}/tflint_linux_amd64.zip
-          unzip -o tflint_linux_amd64.zip
-          sudo mv tflint /usr/local/bin/
-          tflint --version
-
+        uses: ./.github/pre-req/terraform_lint.yml
+        
       - name: Initialize TFLint
         run: tflint --init
 
@@ -99,17 +70,7 @@ jobs:
         run: tflint --recursive
 
       - name: Install Checkov Dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y \
-            python3 \
-            python3-pip \
-            python3-venv \
-            python3-full
-          python3 -m venv .checkov-env
-          .checkov-env/bin/python -m pip install --upgrade pip
-          .checkov-env/bin/pip install checkov
-          .checkov-env/bin/checkov --version
+        uses: ./.github/pre-req/terraform_checkov.yml
 
       - name: Run Checkov
         run: .checkov-env/bin/checkov -d .  --skip-check CKV_GHA_7,CKV_TF_1
@@ -124,20 +85,8 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: ${{ env.TF_VERSION }}
+        uses: ./.github/pre-req/terraform_install.yml
 
-      - name: Create Plugin Cache Directory
-        run: mkdir -p ~/.terraform.d/plugin-cache
-
-      - name: Cache Terraform Providers
-        uses: actions/cache@v4
-        with:
-          path: ~/.terraform.d/plugin-cache
-          key: terraform-${{ runner.os }}-${{ hashFiles('**/.terraform.lock.hcl') }}
-          restore-keys: |
-            terraform-${{ runner.os }}-
       
       - name: Terraform Initialize
         run: terraform init
@@ -176,20 +125,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: ${{ env.TF_VERSION }}
-
-      - name: Create Plugin Cache Directory
-        run: mkdir -p ~/.terraform.d/plugin-cache
-
-      - name: Cache Terraform Providers
-        uses: actions/cache@v4
-        with:
-          path: ~/.terraform.d/plugin-cache
-          key: terraform-${{ runner.os }}-${{ hashFiles('**/.terraform.lock.hcl') }}
-          restore-keys: |
-            terraform-${{ runner.os }}-
+        uses: ./.github/pre-req/terraform_install.yml
       
       - name: Terraform Initialize
         run: terraform init
@@ -212,20 +148,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: ${{ env.TF_VERSION }}
-
-      - name: Create Plugin Cache Directory
-        run: mkdir -p ~/.terraform.d/plugin-cache
-
-      - name: Cache Terraform Providers
-        uses: actions/cache@v4
-        with:
-          path: ~/.terraform.d/plugin-cache
-          key: terraform-${{ runner.os }}-${{ hashFiles('**/.terraform.lock.hcl') }}
-          restore-keys: |
-            terraform-${{ runner.os }}-
+        uses: ./.github/pre-req/terraform_install.yml
       
       - name: Terraform Initialize
         run: terraform init
