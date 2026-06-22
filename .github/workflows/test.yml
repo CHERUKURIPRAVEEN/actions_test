@@ -13,7 +13,12 @@ on:
         options:
           - plan
           - apply
-          - destroy
+      
+      destroy:
+        description: "Destroy Terraform resources"
+        required: false
+        type: boolean
+        default: false
 
       target_resource:
         description: "Terraform resource address to destroy. Use 'all' to destroy everything."
@@ -178,7 +183,7 @@ jobs:
   destroy:
     needs: apply
     runs-on: ubuntu-latest
-    if: github.event.inputs.deployment_action == 'destroy'
+    if: github.event.inputs.destroy == 'true'
 
     steps:
       - name: Checkout Repository
