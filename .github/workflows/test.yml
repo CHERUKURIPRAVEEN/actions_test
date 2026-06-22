@@ -52,21 +52,14 @@ jobs:
       - name: Verify AWS Identity
         run: aws sts get-caller-identity
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: ${{ env.TF_VERSION }}
-        
-      - name: Create Plugin Cache Directory
-        run: mkdir -p ~/.terraform.d/plugin-cache
-
-      - name: Cache Terraform Providers
-        uses: actions/cache@v4
-        with:
-          path: ~/.terraform.d/plugin-cache
-          key: terraform-${{ runner.os }}-${{ hashFiles('**/.terraform.lock.hcl') }}
-          restore-keys: |
-            terraform-${{ runner.os }}-
+      - name: Install Terraform
+        run: |
+          TF_VERSION=${{ env.TF_VERSION }}
+          echo "Installing Terraform ${TF_VERSION}"
+          wget -q https://releases.hashicorp.com/terraform/${TF_VERSION}/terraform_${TF_VERSION}_linux_amd64.zip
+          unzip -o terraform_${TF_VERSION}_linux_amd64.zip
+          sudo mv terraform /usr/local/bin/
+          terraform version
 
       - name: Terraform Format Check
         run: terraform fmt -check -recursive
@@ -78,7 +71,13 @@ jobs:
         run: terraform validate
 
       - name: Setup TFLint
-        uses: terraform-linters/setup-tflint@v4
+        run: |
+          TFLINT_VERSION=0.55.1
+          echo "Installing TFLint ${TFLINT_VERSION}"
+          wget -q https://github.com/terraform-linters/tflint/releases/download/v${TFLINT_VERSION}/tflint_linux_amd64.zip
+          unzip -o tflint_linux_amd64.zip
+          sudo mv tflint /usr/local/bin/
+          tflint --version
 
       - name: Initialize TFLint
         run: tflint --init
@@ -86,8 +85,18 @@ jobs:
       - name: Run TFLint
         run: tflint --recursive
 
-      - name: Install Checkov
-        run: pip install checkov
+      - name: Install Checkov Dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            python3 \
+            python3-pip \
+            python3-venv \
+            python3-full
+          python3 -m venv .checkov-env
+          .checkov-env/bin/python -m pip install --upgrade pip
+          .checkov-env/bin/pip install checkov
+          .checkov-env/bin/checkov --version
 
       - name: Run Checkov
         run: checkov -d .  --skip-check CKV_GHA_7,CKV_TF_1
