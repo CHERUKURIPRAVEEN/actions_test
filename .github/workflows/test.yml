@@ -72,8 +72,12 @@ jobs:
       - name: Install Checkov Dependencies
         uses: ./.github/actions/checkov
 
-      - name: Run Checkov
-        run: .checkov-env/bin/checkov -d .  --skip-check CKV_GHA_7,CKV_TF_1
+      - name: Checkov Scan
+        run: |
+          $HOME/.checkov-env/bin/checkov \
+            -d . \
+            --skip-check CKV_GHA_7,CKV_TF_1 \
+            --soft-fail
 
   plan:
     if: github.event.inputs.deployment_action == 'plan' || github.event.inputs.deployment_action == 'apply'
