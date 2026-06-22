@@ -43,7 +43,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: aws cli setup
-        uses: ./.github/actions/aws-cli
+        uses: ./.github/actions/aws_cli
 
       - name: Verify AWS Identity
         run: aws sts get-caller-identity
