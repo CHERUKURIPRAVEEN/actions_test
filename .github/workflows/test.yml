@@ -43,13 +43,13 @@ jobs:
         uses: actions/checkout@v4
 
       - name: aws cli setup
-        uses: ./.github/actions/aws_cli/actions.yml
+        uses: ./.github/actions/aws-cli
 
       - name: Verify AWS Identity
         run: aws sts get-caller-identity
 
       - name: Install Terraform
-        uses: ./.github/actions/terraform/actions.yml
+        uses: ./.github/actions/terraform
 
       - name: Terraform Format Check
         run: terraform fmt -check -recursive
@@ -61,7 +61,7 @@ jobs:
         run: terraform validate
 
       - name: Setup TFLint
-        uses: ./.github/actions/tflint/actions.yml
+        uses: ./.github/actions/tflint
         
       - name: Initialize TFLint
         run: tflint --init
@@ -70,7 +70,7 @@ jobs:
         run: tflint --recursive
 
       - name: Install Checkov Dependencies
-        uses: ./.github/actions/checkov/actions.yml
+        uses: ./.github/actions/checkov
 
       - name: Run Checkov
         run: .checkov-env/bin/checkov -d .  --skip-check CKV_GHA_7,CKV_TF_1
@@ -85,7 +85,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Terraform
-        uses: ./.github/actions/terraform/actions.yml
+        uses: ./.github/actions/terraform
 
       - name: Terraform Initialize
         run: terraform init
@@ -124,7 +124,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Terraform
-        uses: ./.github/actions/terraform/actions.yml
+        uses: ./.github/actions/terraform
       
       - name: Terraform Initialize
         run: terraform init
@@ -147,7 +147,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Terraform
-        uses: ./.github/actions/terraform/actions.yml
+        uses: ./.github/actions/terraform
       
       - name: Terraform Initialize
         run: terraform init
